@@ -3,245 +3,626 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Menu Studio — il menu del ristorante, impaginato in pochi minuti</title>
-<meta name="description" content="Menu Studio: uno strumento semplice per comporre il menu del ristorante pagina per pagina ed esportarlo in PDF A4 pronto per la stampa.">
+<title>Menu Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* Layout: barra in alto, elenco pagine | modifica pagina | anteprima A4 */
 :root{
-  --bg:#efefec; --panel:#ffffff; --ink:#151515; --mute:#6c6c68; --line:#d9d9d4; --soft:#f6f6f3;
+  --bg:#efefec; --panel:#ffffff; --ink:#151515; --mute:#6c6c68; --line:#d9d9d4;
+  --soft:#f6f6f3; --focus:#2b5cff; --danger:#b3261e;
   --serif:'Newsreader',Georgia,'Times New Roman',serif;
   --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;font:16px/1.6 var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
-a{color:inherit}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 var(--sans);background:var(--bg);color:var(--ink)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.35;cursor:default}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
-/* barra */
-.nav{position:sticky;top:0;z-index:5;background:rgba(239,239,236,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-.nav .wrap{display:flex;align-items:center;gap:20px;height:60px}
-.brand{font:500 20px var(--serif);text-decoration:none}
-.nav .links{margin-left:auto;display:flex;gap:22px;font-size:14px}
-.nav .links a{text-decoration:none;color:var(--mute)}
-.nav .links a:hover{color:var(--ink)}
-.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ink);border-radius:8px;padding:11px 18px;font:500 15px var(--sans);text-decoration:none;background:var(--ink);color:#fff;transition:transform .15s}
-.btn:hover{transform:translateY(-1px)}
-.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
-.btn.ghost:hover{border-color:var(--ink)}
-.btn.sm{padding:7px 13px;font-size:14px}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%}
 
-/* hero */
-.hero{padding:84px 0 96px}
-.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:64px;align-items:center}
-.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:0 0 18px}
-h1{font:400 clamp(40px,5.6vw,68px)/1.04 var(--serif);letter-spacing:-.02em;margin:0 0 22px}
-h1 em{font-style:italic}
-.lead{font-size:19px;color:#3a3a37;max-width:520px;margin:0 0 32px}
-.cta{display:flex;gap:12px;flex-wrap:wrap}
-.facts{display:flex;gap:28px;flex-wrap:wrap;margin-top:40px;font-size:14px;color:var(--mute)}
-.facts b{display:block;font:500 22px var(--serif);color:var(--ink)}
+/* barra superiore */
+.top{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font:500 18px var(--serif);letter-spacing:.01em;margin-right:6px}
+.pname{font:500 15px var(--sans);border:1px solid transparent;border-radius:6px;padding:6px 8px;min-width:160px;width:240px;max-width:100%;background:transparent}
+.pname:hover{border-color:var(--line)}
+.pname:focus{border-color:var(--line);background:#fff}
+.status{font-size:12px;color:var(--mute)}
+.status.dirty{color:var(--ink)}
+.status.dirty::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#e08a00;margin-right:6px}
+.spacer{flex:1}
+.sep{width:1px;height:22px;background:var(--line)}
+.btn,.ib{border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 12px;line-height:1.2}
+.btn:hover:not(:disabled),.ib:hover:not(:disabled){border-color:var(--ink)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.ghost{border-color:transparent;color:var(--mute)}
+.ib{padding:5px 9px;font-size:13px}
+.ib.danger:hover:not(:disabled){border-color:var(--danger);color:var(--danger)}
 
-/* pagina A4 dimostrativa (stessi stili dello strumento) */
-.stage{position:relative;display:flex;justify-content:center}
-.sheet{width:min(100%,400px);background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12),0 24px 60px rgba(0,0,0,.14);transform:rotate(1.2deg)}
-.sheet.back{position:absolute;top:22px;left:50%;margin-left:-230px;transform:rotate(-4deg);opacity:.55;z-index:-1}
+/* area di lavoro */
+.ws{display:grid;grid-template-columns:176px minmax(340px,440px) 1fr;min-height:0}
+.pages{overflow:auto;padding:14px;background:var(--panel);border-right:1px solid var(--line)}
+.editor{overflow:auto;padding:16px 18px 40px;background:var(--panel);border-right:1px solid var(--line)}
+.preview{overflow:auto;padding:22px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.sheet{width:min(100%,calc((100vh - 130px)/1.4142));box-shadow:0 1px 2px rgba(0,0,0,.12),0 8px 28px rgba(0,0,0,.10);background:#fff}
+.warn{max-width:520px;background:#fff4e0;border:1px solid #e9c37a;border-radius:6px;padding:8px 12px;font-size:13px}
+
+/* elenco pagine */
+.pthumb{margin-bottom:14px;cursor:pointer;border-radius:4px}
+.tframe{border:1px solid var(--line);pointer-events:none;background:#fff}
+.pthumb.on .tframe{outline:2px solid var(--ink);outline-offset:1px}
+.tlabel{font-size:12px;margin-top:5px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tlabel b{color:var(--ink);font-weight:600;margin-right:4px}
+.add{width:100%;border:1px dashed var(--mute);background:transparent;border-radius:6px;padding:9px;color:var(--mute)}
+.add:hover{color:var(--ink);border-color:var(--ink)}
+
+/* pannello di modifica */
+.ehead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.ehead h2{margin:0;font:500 20px var(--serif)}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.group{display:grid;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px}
+label{display:grid;gap:4px;font-size:12px;font-weight:500}
+label small{font-weight:400;color:var(--mute)}
+input,textarea,select{width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:#fff}
+textarea{resize:vertical;min-height:58px}
+.imgrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.imgrow img{width:54px;height:54px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.imgrow select{width:auto}
+.hint{font-size:12px;color:var(--mute);margin:0}
+.dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dhead h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.dish-card{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;background:var(--soft);margin-bottom:10px}
+.drow{display:flex;gap:8px;align-items:center}
+.drow .dname{font-weight:500;flex:1;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:12px}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.newtag{display:flex;gap:4px;align-items:center}
+.newtag input{width:130px;padding:3px 8px;font-size:12px;border-radius:999px}
+.newtag button{border:1px solid var(--line);background:#fff;border-radius:999px;width:24px;height:24px;line-height:1;padding:0}
+.priceb{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:500}
+.priceb input{width:110px}
+.empty{color:var(--mute)}
+.wide{width:100%;margin-top:4px}
+
+/* toast e dialog */
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 14px;display:flex;gap:14px;align-items:center;max-width:min(92vw,560px);z-index:20;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+#toast button{background:transparent;border:0;color:#fff;text-decoration:underline;padding:0}
+dialog{border:0;border-radius:10px;padding:20px;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog p{margin:0 0 16px}
+dialog .btns{justify-content:flex-end}
+
+/* ---------- la pagina del menu (A4) ---------- */
 .pg{container-type:inline-size;aspect-ratio:210/297;background:#fff;color:#111;display:flex;flex-direction:column;overflow:hidden}
-.pg-media{flex:1;min-height:0;padding:4cqw 4cqw 0}
-.pg-media .img{width:100%;height:100%;background:
-  radial-gradient(120% 90% at 30% 20%,#f3d9b8 0,transparent 55%),
-  radial-gradient(90% 80% at 80% 70%,#9fb6a4 0,transparent 60%),
-  linear-gradient(160deg,#d8c3a5,#7d8f7f)}
-.pg-body{display:flex;flex-direction:column;align-items:center;gap:4.4cqw;text-align:center;padding:6cqw 8cqw 0;margin-bottom:9cqw}
+.pg-media{flex:1;min-height:0}
+.pg-media.inset{padding:4cqw 4cqw 0}
+.pg-media img{display:block;width:100%;height:100%;object-fit:cover}
+.pg-body{display:flex;flex-direction:column;align-items:center;gap:4.4cqw;text-align:center;padding:0 8cqw;margin-bottom:9cqw}
 .dish{max-width:62cqw}
-.dish h3{margin:0;font:400 3.6cqw/1.15 var(--serif)}
-.dish .desc{margin:1.7cqw auto 0;max-width:52cqw;font:400 1.9cqw/1.28 var(--serif);text-transform:uppercase;letter-spacing:-.02em}
-.dish .tags{margin:1.8cqw 0 0;font:400 1.55cqw/1.3 var(--sans);text-transform:uppercase;letter-spacing:.015em}
+.dish h3{margin:0;font:400 2.65cqw/1.15 var(--serif);letter-spacing:-.005em}
+.dish .desc{margin:1.7cqw auto 0;max-width:48cqw;font:400 1.4cqw/1.28 var(--serif);text-transform:uppercase;letter-spacing:-.02em;white-space:pre-line;text-wrap:balance}
+.dish .tags{margin:1.8cqw 0 0;font:400 1.15cqw/1.3 var(--sans);text-transform:uppercase;letter-spacing:.015em}
+.dish .price{margin:1.2cqw 0 0;font:400 1.5cqw/1.2 var(--serif)}
 .pg-foot{display:grid;grid-template-columns:1fr auto 1fr;align-items:baseline;padding:0 3.7cqw 3.4cqw}
-.pg-foot .n{font:400 1.7cqw var(--sans)}
-.pg-foot .t{font:400 3.6cqw var(--serif);text-align:center}
-.pg-foot .r{font:400 1.9cqw var(--serif);text-align:right}
+.pg-foot .n{font:400 1.2cqw var(--sans)}
+.pg-foot .t{font:400 2.65cqw var(--serif);text-align:center}
+.pg-foot .r{font:400 1.35cqw var(--serif);text-align:right}
 
-/* sezioni */
-section.block{padding:96px 0;border-top:1px solid var(--line)}
-section.white{background:var(--panel)}
-h2{font:400 clamp(30px,3.6vw,44px)/1.1 var(--serif);letter-spacing:-.015em;margin:0 0 14px}
-.sub{color:var(--mute);font-size:18px;max-width:620px;margin:0 0 52px}
-
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;counter-reset:s}
-.step{counter-increment:s;border-top:1px solid var(--ink);padding-top:20px}
-.step::before{content:"0" counter(s);font:400 14px var(--sans);color:var(--mute)}
-.step h3{font:500 22px var(--serif);margin:10px 0 8px}
-.step p{margin:0;color:#3a3a37}
-
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.feat{background:var(--panel);padding:28px}
-.feat .ic{width:36px;height:36px;border-radius:8px;background:var(--soft);border:1px solid var(--line);display:grid;place-items:center;margin-bottom:16px}
-.feat h3{font:600 16px var(--sans);margin:0 0 6px}
-.feat p{margin:0;font-size:15px;color:var(--mute)}
-
-.service{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:30px;display:flex;flex-direction:column}
-.card .tag{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
-.card h3{font:500 26px var(--serif);margin:8px 0 12px}
-.card ul{margin:0;padding:0;list-style:none;display:grid;gap:10px;font-size:15px}
-.card li{padding-left:22px;position:relative}
-.card li::before{content:"";position:absolute;left:2px;top:.62em;width:10px;height:1px;background:var(--ink)}
-.card.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
-.card.dark .tag{color:#a9a9a4}
-.card.dark li::before{background:#fff}
-
-.final{text-align:center;padding:110px 0}
-.final h2{max-width:720px;margin:0 auto 18px}
-.final p{color:var(--mute);margin:0 auto 32px;max-width:520px;font-size:18px}
-.final .cta{justify-content:center}
-
-footer{border-top:1px solid var(--line);padding:28px 0;font-size:13px;color:var(--mute)}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-
-@media (max-width:900px){
-  .hero{padding:48px 0 72px}
-  .hero .wrap{grid-template-columns:1fr;gap:56px}
-  .sheet.back{display:none}
-  .steps,.grid,.service{grid-template-columns:1fr}
-  .nav .links{display:none}
-  section.block{padding:72px 0}
+/* stampa / PDF */
+#print{display:none}
+@page{size:A4;margin:0}
+@media print{
+  html,body{height:auto;background:#fff;overflow:visible}
+  .app,#toast,dialog{display:none!important}
+  #print{display:block}
+  #print .pg{width:210mm;height:296.6mm;aspect-ratio:auto;break-after:page;break-inside:avoid}
+  #print .pg:last-child{break-after:auto}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
-@media (max-width:480px){
-  .wrap{padding:0 16px}
-  .nav .btn{display:none}
+
+/* schermi stretti */
+@media (max-width:1000px){
+  .app{height:auto;min-height:100%}
+  .ws{grid-template-columns:1fr;grid-template-rows:auto auto auto}
+  .pages{display:flex;gap:12px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .pthumb{flex:0 0 110px;margin-bottom:0}
+  .add{flex:0 0 110px}
+  .editor{border-right:0;border-bottom:1px solid var(--line)}
+  .sheet{width:min(100%,520px)}
 }
 </style>
 </head>
 <body>
+<div class="app">
+  <header class="top">
+    <div class="brand">Menu Studio</div>
+    <input id="pname" class="pname" aria-label="Nome del progetto">
+    <span id="status" class="status"></span>
+    <div class="spacer"></div>
+    <button id="bUndo" class="ib" title="Annulla (Ctrl+Z)">Annulla</button>
+    <button id="bRedo" class="ib" title="Ripeti (Ctrl+Maiusc+Z)">Ripeti</button>
+    <span class="sep"></span>
+    <button id="bNew" class="btn">Nuovo</button>
+    <button id="bOpen" class="btn">Apri…</button>
+    <button id="bSave" class="btn">Salva</button>
+    <button id="bSaveAs" class="btn ghost">Salva con nome…</button>
+    <button id="bPdf" class="btn primary">Esporta PDF</button>
+  </header>
+  <main class="ws">
+    <nav id="pages" class="pages" aria-label="Pagine del menu"></nav>
+    <section id="editor" class="editor" aria-label="Modifica pagina"></section>
+    <section id="preview" class="preview" aria-label="Anteprima"></section>
+  </main>
+</div>
 
-<header class="nav">
-  <div class="wrap">
-    <a class="brand" href="#">Menu Studio</a>
-    <nav class="links">
-      <a href="#come-funziona">Come funziona</a>
-      <a href="#funzioni">Funzioni</a>
-      <a href="#servizio">Il servizio</a>
-    </nav>
-    <a class="btn sm" href="app/">Prova la demo</a>
-  </div>
-</header>
-
-<main>
-  <section class="hero">
-    <div class="wrap">
-      <div>
-        <p class="eyebrow">Per ristoranti, hotel e beach club</p>
-        <h1>Il tuo menu, <em>impaginato</em> in pochi minuti.</h1>
-        <p class="lead">Scrivi i piatti, scegli le foto, esporta un PDF A4 pronto per la tipografia. Niente grafico da chiamare ogni volta che cambia un prezzo o arriva il pescato del giorno.</p>
-        <div class="cta">
-          <a class="btn" href="app/">Apri la demo →</a>
-          <a class="btn ghost" href="#servizio">Cosa include</a>
-        </div>
-        <div class="facts">
-          <div><b>0</b>account o abbonamenti</div>
-          <div><b>A4</b>PDF pronto da stampare</div>
-          <div><b>100%</b>funziona offline</div>
-        </div>
-      </div>
-
-      <div class="stage" aria-hidden="true">
-        <div class="sheet back"><div class="pg"><div class="pg-media"><div class="img"></div></div><div class="pg-foot"><span class="n">01</span><span class="t">Starters</span><span class="r">To start the journey</span></div></div></div>
-        <div class="sheet">
-          <div class="pg">
-            <div class="pg-media"><div class="img"></div></div>
-            <div class="pg-body">
-              <div class="dish"><h3>Ikan Bumbu Kuning</h3><p class="desc">Fish of the day, Indonesian yellow spices, steamed rice</p><p class="tags">Chilly contain, Gluten free</p></div>
-              <div class="dish"><h3>Lasagna alle Verdure</h3><p class="desc">Vegetables lasagna with pesto and Parmesan cheese</p><p class="tags">Vegetarian</p></div>
-              <div class="dish"><h3>Spaghetti alla Puttanesca</h3><p class="desc">Tomato, garlic, chilli, olives, capers, anchovies</p></div>
-            </div>
-            <div class="pg-foot"><span class="n">02</span><span class="t">Main Course</span><span class="r">To continue</span></div>
-          </div>
-        </div>
-      </div>
+<div id="print" aria-hidden="true"></div>
+<div id="toast" hidden role="status"></div>
+<input id="openInput" type="file" accept=".json,application/json" hidden>
+<dialog id="dlg">
+  <form method="dialog">
+    <p id="dlgMsg"></p>
+    <div class="btns">
+      <button class="btn" value="cancel">Annulla</button>
+      <button id="dlgOk" class="btn primary" value="ok">Continua</button>
     </div>
-  </section>
+  </form>
+</dialog>
 
-  <section class="block white" id="come-funziona">
-    <div class="wrap">
-      <h2>Tre passaggi, nessuna competenza grafica.</h2>
-      <p class="sub">Lo stile del menu è già impostato: chi lo aggiorna deve solo pensare al contenuto.</p>
-      <div class="steps">
-        <div class="step"><h3>Scrivi i piatti</h3><p>Nome, descrizione, prezzo ed etichette come <i>Vegan</i> o <i>Gluten free</i> con un clic.</p></div>
-        <div class="step"><h3>Componi le pagine</h3><p>Aggiungi una foto per pagina, trascina per riordinare, controlla l’anteprima A4 in tempo reale.</p></div>
-        <div class="step"><h3>Esporta il PDF</h3><p>Un file con tutte le pagine, da mandare in stampa o da condividere con il QR code al tavolo.</p></div>
-      </div>
-    </div>
-  </section>
+<script>
+(function(){
+'use strict';
 
-  <section class="block" id="funzioni">
-    <div class="wrap">
-      <h2>Piccolo, ma pensato per il servizio vero.</h2>
-      <p class="sub">Tutto quello che serve per tenere il menu aggiornato, niente di superfluo.</p>
-      <div class="grid">
-        <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></div><h3>Anteprima A4 dal vivo</h3><p>Vedi la pagina esattamente come uscirà dalla stampa, mentre scrivi.</p></div>
-        <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></div><h3>Avviso se il testo non entra</h3><p>Ti segnala quando una pagina è troppo piena, prima di sprecare carta.</p></div>
-        <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-9 8"/></svg></div><h3>Foto a filo o con margini</h3><p>Carichi l’immagine, viene ottimizzata automaticamente per la stampa.</p></div>
-        <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg></div><h3>Etichette e allergeni</h3><p>Piccante, senza glutine, vegano… e quelle che servono a te, riutilizzabili.</p></div>
-        <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div><h3>Annulla e ripeti</h3><p>Fino a 60 passaggi indietro. Eliminato un piatto per sbaglio? Un clic.</p></div>
-        <div class="feat"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>I dati restano tuoi</h3><p>Nessun server, nessun cloud: il menu è un file sul tuo computer.</p></div>
-      </div>
-    </div>
-  </section>
+/* ---------- utilità ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const uid = () => Math.random().toString(36).slice(2, 9);
+const DEFAULT_TAGS = ['Chilly contain', 'Gluten free', 'Vegan', 'Vegetarian'];
 
-  <section class="block white" id="servizio">
-    <div class="wrap">
-      <h2>Te lo installo e lo cucio sul tuo locale.</h2>
-      <p class="sub">Non vendo un software in abbonamento: preparo lo strumento con la tua identità e lo lascio a te, pronto da usare.</p>
-      <div class="service">
-        <div class="card">
-          <span class="tag">01 · Installazione</span>
-          <h3>Pronto dove ti serve</h3>
-          <ul>
-            <li>Sul computer della cassa o dell’ufficio</li>
-            <li>Oppure online, su un indirizzo del tuo dominio</li>
-            <li>Funziona su Chrome, Edge, Safari</li>
-          </ul>
-        </div>
-        <div class="card dark">
-          <span class="tag">02 · Configurazione</span>
-          <h3>Con il tuo stile</h3>
-          <ul>
-            <li>Font, colori e impaginazione del tuo menu attuale</li>
-            <li>Etichette e allergeni nelle lingue che usi</li>
-            <li>Il menu di oggi già caricato, pagina per pagina</li>
-          </ul>
-        </div>
-        <div class="card">
-          <span class="tag">03 · Avvio</span>
-          <h3>Il tuo staff in autonomia</h3>
-          <ul>
-            <li>Una breve sessione con chi aggiornerà il menu</li>
-            <li>Prova di stampa insieme alla tua tipografia</li>
-            <li>Supporto nelle prime settimane</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
+const pagesEl = $('#pages'), editorEl = $('#editor'), previewEl = $('#preview');
+const printEl = $('#print'), toastEl = $('#toast'), statusEl = $('#status');
+const pnameEl = $('#pname'), openInput = $('#openInput');
 
-  <section class="final">
-    <div class="wrap">
-      <h2>Provalo con il menu di esempio.</h2>
-      <p>La demo è lo strumento vero: modifica, aggiungi pagine, esporta il PDF.</p>
-      <div class="cta"><a class="btn" href="app/">Apri Menu Studio →</a></div>
-    </div>
-  </section>
-</main>
+/* ---------- modello dati ---------- */
+function newDish(o){ return Object.assign({id:uid(), name:'', desc:'', tags:[], price:''}, o); }
+function newPage(o){ return Object.assign({id:uid(), title:'Nuova pagina', tagline:'', image:null, imageMode:'full', dishes:[newDish()]}, o); }
 
-<footer>
-  <div class="wrap">
-    <span>Menu Studio</span>
-    <span>Un file HTML, nessuna dipendenza.</span>
-  </div>
-</footer>
+function sampleProject(){
+  const both = ['Chilly contain', 'Gluten free'];
+  return {
+    version:1, name:'Menu esempio', tagPresets:[...DEFAULT_TAGS],
+    pages:[
+      newPage({title:'Starters', tagline:'To start the journey', dishes:[
+        newDish({name:'Gohu Ikan', desc:'Raw fish of the day marinated in citrus, local basil, shallot and chilli.', tags:[...both]}),
+        newDish({name:'Calamari Fritti', desc:'Crispy fried squid served with lemon and tartar sauce.'}),
+        newDish({name:'Asian Sesame Chicken Salad', desc:'Mixed of organic green, red cabbage, carrot, chicken, onion sesame dressing, soyu.'}),
+        newDish({name:'Aubergine Soup', desc:'Roasted eggplant soup with garlic, onion and lime.', tags:['Vegan','Vegetarian','Gluten free']})
+      ]}),
+      newPage({title:'Main Course', tagline:'To continue', dishes:[
+        newDish({name:'Ikan Bumbu Kuning', desc:'Fish of the day cooked with Indonesian yellow spiced, served with steamed rice and seasonal vegetables.', tags:[...both]}),
+        newDish({name:'Beef Tenderloin Steak', desc:'Grilled beef tenderloin steak, mashed potato, stir-fried carrot & green bean, honey ginger juice.', tags:[...both]}),
+        newDish({name:'Lasagna alle Verdure', desc:'Vegetables lasagna with pesto and Parmesan cheese.', tags:[...both]}),
+        newDish({name:'Braised Pork Ribs', desc:'Slow roasted pork ribs with barbecue sauce, stir-fried carrot & green bean, roasted potato.', tags:[...both]}),
+        newDish({name:'Spaghetti alla Puttanesca', desc:'Spaghetti with tomato sauce, garlic, chilli, black olives, capers, anchovies.', tags:[...both]})
+      ]})
+    ]
+  };
+}
+function blankProject(){
+  return {version:1, name:'Nuovo menu', tagPresets:[...DEFAULT_TAGS], pages:[newPage({title:'Titolo pagina'})]};
+}
+function normalize(d){
+  if(!d || !Array.isArray(d.pages)) throw new Error('il file non è un progetto di Menu Studio');
+  const p = {
+    version:1,
+    name:String(d.name || 'Menu senza nome'),
+    tagPresets:Array.isArray(d.tagPresets) ? d.tagPresets.map(String) : [...DEFAULT_TAGS],
+    pages:d.pages.map(pg => ({
+      id:pg.id || uid(), title:String(pg.title || ''), tagline:String(pg.tagline || ''),
+      image:typeof pg.image === 'string' ? pg.image : null,
+      imageMode:pg.imageMode === 'inset' ? 'inset' : 'full',
+      dishes:(Array.isArray(pg.dishes) ? pg.dishes : []).map(x => ({
+        id:x.id || uid(), name:String(x.name || ''), desc:String(x.desc || ''),
+        tags:Array.isArray(x.tags) ? x.tags.map(String) : [], price:String(x.price || '')
+      }))
+    }))
+  };
+  if(!p.pages.length) p.pages.push(newPage({title:'Titolo pagina'}));
+  return p;
+}
 
+/* ---------- stato, cronologia, modifiche non salvate ---------- */
+let project, sel = 0, fileHandle = null, savedSnap = '', dirty = false;
+let hist = [], hi = -1, timer = null, dragIdx = null, savedOnce = false;
+const snap = () => JSON.stringify(project);
+const cur = () => project.pages[sel];
+
+function commit(){
+  clearTimeout(timer); timer = null;
+  const s = snap();
+  if(s !== hist[hi]){
+    hist = hist.slice(0, hi + 1); hist.push(s);
+    if(hist.length > 60) hist.shift();
+    hi = hist.length - 1;
+  }
+  dirty = s !== savedSnap;
+  updateStatus();
+}
+function scheduleCommit(){ dirty = true; updateStatus(); clearTimeout(timer); timer = setTimeout(commit, 500); }
+function flush(){ if(timer) commit(); }
+function restore(){
+  project = JSON.parse(hist[hi]);
+  sel = Math.min(sel, project.pages.length - 1);
+  dirty = hist[hi] !== savedSnap;
+  renderAll();
+}
+function undo(){ flush(); if(hi > 0){ hi--; restore(); } }
+function redo(){ flush(); if(hi < hist.length - 1){ hi++; restore(); } }
+function mutate(fn){ fn(); commit(); renderAll(); }
+
+function loadProject(data, handle){
+  project = normalize(data); sel = 0; fileHandle = handle || null;
+  hist = []; hi = -1; clearTimeout(timer); timer = null;
+  savedSnap = snap(); dirty = false; savedOnce = false;
+  commit(); dirty = false; renderAll();
+}
+
+/* ---------- rendering ---------- */
+function pageHTML(p, i){
+  const dishes = p.dishes.filter(d => d.name.trim() || d.desc.trim() || d.tags.length || d.price.trim());
+  return '<div class="pg">' +
+    '<div class="pg-media' + (p.imageMode === 'inset' ? ' inset' : '') + '">' + (p.image ? '<img alt="" src="' + p.image + '">' : '') + '</div>' +
+    '<div class="pg-body">' + dishes.map(d =>
+      '<div class="dish">' +
+      (d.name.trim() ? '<h3>' + esc(d.name) + '</h3>' : '') +
+      (d.desc.trim() ? '<p class="desc">' + esc(d.desc) + '</p>' : '') +
+      (d.tags.length ? '<p class="tags">' + esc(d.tags.join(', ')) + '</p>' : '') +
+      (d.price.trim() ? '<p class="price">' + esc(d.price) + '</p>' : '') +
+      '</div>').join('') + '</div>' +
+    '<div class="pg-foot"><span class="n">' + pad(i + 1) + '</span><span class="t">' + esc(p.title) + '</span><span class="r">' + esc(p.tagline) + '</span></div>' +
+  '</div>';
+}
+
+function renderAll(){
+  if(document.activeElement !== pnameEl) pnameEl.value = project.name;
+  renderPages(); renderEditor(); renderPreview(); updateStatus();
+}
+
+function renderPages(){
+  pagesEl.innerHTML = project.pages.map((p, i) =>
+    '<div class="pthumb' + (i === sel ? ' on' : '') + '" draggable="true" data-i="' + i + '" tabindex="0" role="button" aria-label="Pagina ' + (i + 1) + ': ' + esc(p.title) + '">' +
+    '<div class="tframe">' + pageHTML(p, i) + '</div>' +
+    '<div class="tlabel"><b>' + pad(i + 1) + '</b>' + (esc(p.title) || 'Senza titolo') + '</div></div>'
+  ).join('') + '<button class="add" data-act="add-page">+ Nuova pagina</button>';
+}
+
+function updateThumb(){
+  const t = pagesEl.querySelector('.pthumb[data-i="' + sel + '"]');
+  if(!t) return;
+  const p = cur();
+  t.querySelector('.tframe').innerHTML = pageHTML(p, sel);
+  t.querySelector('.tlabel').innerHTML = '<b>' + pad(sel + 1) + '</b>' + (esc(p.title) || 'Senza titolo');
+}
+
+function allTags(){
+  const set = new Set(project.tagPresets);
+  project.pages.forEach(pg => pg.dishes.forEach(d => d.tags.forEach(t => set.add(t))));
+  return [...set];
+}
+
+function dishCard(d, tags){
+  return '<div class="dish-card" data-id="' + d.id + '">' +
+    '<div class="drow"><input class="dname" data-df="name" placeholder="Nome del piatto" aria-label="Nome del piatto" value="' + esc(d.name) + '">' +
+    '<div class="btns">' +
+      '<button class="ib" data-act="dish-up" title="Sposta su">↑</button>' +
+      '<button class="ib" data-act="dish-down" title="Sposta giù">↓</button>' +
+      '<button class="ib" data-act="dish-dup" title="Duplica">⧉</button>' +
+      '<button class="ib danger" data-act="dish-del" title="Elimina">✕</button>' +
+    '</div></div>' +
+    '<textarea data-df="desc" rows="2" aria-label="Descrizione" placeholder="Descrizione, ingredienti">' + esc(d.desc) + '</textarea>' +
+    '<div class="chips">' + tags.map(t =>
+      '<button type="button" class="chip" data-act="tag" data-tag="' + esc(t) + '" aria-pressed="' + d.tags.includes(t) + '">' + esc(t) + '</button>').join('') +
+      '<span class="newtag"><input data-newtag placeholder="Nuova etichetta" aria-label="Nuova etichetta"><button type="button" data-act="addtag" title="Aggiungi etichetta">+</button></span>' +
+    '</div>' +
+    '<div class="priceb">Prezzo <input data-df="price" placeholder="facoltativo" aria-label="Prezzo" value="' + esc(d.price) + '"></div>' +
+  '</div>';
+}
+
+function renderEditor(){
+  const p = cur(), tags = allTags();
+  editorEl.innerHTML =
+    '<div class="ehead"><h2>Pagina ' + pad(sel + 1) + '</h2><div class="btns">' +
+      '<button class="ib" data-act="page-up" title="Sposta indietro"' + (sel === 0 ? ' disabled' : '') + '>←</button>' +
+      '<button class="ib" data-act="page-down" title="Sposta avanti"' + (sel === project.pages.length - 1 ? ' disabled' : '') + '>→</button>' +
+      '<button class="ib" data-act="page-dup">Duplica</button>' +
+      '<button class="ib danger" data-act="page-del"' + (project.pages.length === 1 ? ' disabled' : '') + '>Elimina</button>' +
+    '</div></div>' +
+    '<div class="group">' +
+      '<label>Titolo <small>in basso, al centro</small><input id="f-title" data-f="title" value="' + esc(p.title) + '"></label>' +
+      '<label>Testo a destra <small>in basso</small><input id="f-tagline" data-f="tagline" value="' + esc(p.tagline) + '"></label>' +
+      '<div><div style="font-size:12px;font-weight:500;margin-bottom:6px">Immagine <small style="font-weight:400;color:var(--mute)">occupa lo spazio sopra i piatti</small></div>' +
+      '<div class="imgrow">' +
+        (p.image ? '<img alt="" src="' + p.image + '">' : '') +
+        '<button class="ib" data-act="img-pick">' + (p.image ? 'Cambia' : 'Aggiungi immagine') + '</button>' +
+        (p.image ? '<button class="ib" data-act="img-del">Rimuovi</button>' +
+          '<select data-f="imageMode" aria-label="Posizione immagine"><option value="full"' + (p.imageMode === 'full' ? ' selected' : '') + '>A filo pagina</option><option value="inset"' + (p.imageMode === 'inset' ? ' selected' : '') + '>Con margini</option></select>' : '') +
+      '</div></div>' +
+      '<input type="file" id="imgfile" accept="image/*" hidden>' +
+    '</div>' +
+    '<div class="dhead"><h3>Piatti</h3><button class="btn" data-act="add-dish">+ Aggiungi piatto</button></div>' +
+    (p.dishes.map(d => dishCard(d, tags)).join('') || '<p class="empty">Nessun piatto in questa pagina.</p>') +
+    (p.dishes.length > 3 ? '<button class="btn wide" data-act="add-dish">+ Aggiungi piatto</button>' : '');
+}
+
+function renderPreview(){
+  const p = cur();
+  previewEl.innerHTML =
+    '<div class="warn" hidden>Il contenuto non entra nella pagina. Sposta qualche piatto in un\'altra pagina o accorcia i testi.</div>' +
+    '<div class="sheet">' + pageHTML(p, sel) + '</div>';
+  const pg = previewEl.querySelector('.pg');
+  previewEl.querySelector('.warn').hidden = !(pg.scrollHeight > pg.clientHeight + 2);
+}
+
+function updateStatus(){
+  statusEl.className = 'status' + (dirty ? ' dirty' : '');
+  if(dirty) statusEl.textContent = 'Modifiche non salvate';
+  else if(fileHandle) statusEl.textContent = 'Salvato in ' + fileHandle.name;
+  else statusEl.textContent = savedOnce ? 'Salvato' : 'Progetto non ancora salvato';
+  $('#bUndo').disabled = !(hi > 0 || timer);
+  $('#bRedo').disabled = !(hi < hist.length - 1);
+}
+
+function touch(){ renderPreview(); updateThumb(); scheduleCommit(); }
+
+/* ---------- toast e conferme ---------- */
+function toast(msg, action){
+  toastEl.innerHTML = '';
+  const s = document.createElement('span'); s.textContent = msg; toastEl.appendChild(s);
+  if(action){
+    const b = document.createElement('button'); b.textContent = action.label;
+    b.onclick = () => { action.fn(); toastEl.hidden = true; };
+    toastEl.appendChild(b);
+  }
+  toastEl.hidden = false;
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => { toastEl.hidden = true; }, action ? 7000 : 4000);
+}
+function confirmDlg(msg, ok){
+  return new Promise(res => {
+    const dlg = $('#dlg');
+    $('#dlgMsg').textContent = msg; $('#dlgOk').textContent = ok || 'Continua';
+    dlg.returnValue = '';
+    dlg.onclose = () => res(dlg.returnValue === 'ok');
+    dlg.showModal();
+  });
+}
+
+/* ---------- eventi: elenco pagine ---------- */
+function select(i){
+  flush(); sel = i;
+  pagesEl.querySelectorAll('.pthumb').forEach(t => t.classList.toggle('on', +t.dataset.i === i));
+  renderEditor(); renderPreview();
+}
+pagesEl.addEventListener('click', e => {
+  if(e.target.closest('[data-act="add-page"]')){
+    mutate(() => { project.pages.splice(sel + 1, 0, newPage()); sel++; });
+    const f = $('#f-title'); if(f){ f.focus(); f.select(); }
+    return;
+  }
+  const t = e.target.closest('.pthumb'); if(t) select(+t.dataset.i);
+});
+pagesEl.addEventListener('keydown', e => {
+  const t = e.target.closest('.pthumb');
+  if(t && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); select(+t.dataset.i); }
+});
+pagesEl.addEventListener('dragstart', e => {
+  const t = e.target.closest('.pthumb'); if(!t) return;
+  dragIdx = +t.dataset.i; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(dragIdx));
+});
+pagesEl.addEventListener('dragover', e => { if(dragIdx != null && e.target.closest('.pthumb')) e.preventDefault(); });
+pagesEl.addEventListener('drop', e => {
+  const t = e.target.closest('.pthumb'); if(!t || dragIdx == null) return;
+  e.preventDefault();
+  const from = dragIdx, to = +t.dataset.i; dragIdx = null;
+  if(from === to) return;
+  mutate(() => { const m = project.pages.splice(from, 1)[0]; project.pages.splice(to, 0, m); sel = to; });
+});
+pagesEl.addEventListener('dragend', () => { dragIdx = null; });
+
+/* ---------- eventi: pannello di modifica ---------- */
+const findDish = id => cur().dishes.find(d => d.id === id);
+const dishIdx = id => cur().dishes.findIndex(d => d.id === id);
+
+editorEl.addEventListener('input', e => {
+  const t = e.target;
+  if(t.dataset.f){ cur()[t.dataset.f] = t.value; touch(); }
+  else if(t.dataset.df){
+    const d = findDish(t.closest('.dish-card').dataset.id);
+    if(d){ d[t.dataset.df] = t.value; touch(); }
+  }
+});
+
+function addTagFrom(inputEl){
+  const v = inputEl.value.trim(); if(!v) return;
+  const card = inputEl.closest('.dish-card'), id = card.dataset.id;
+  mutate(() => {
+    if(!allTags().some(t => t.toLowerCase() === v.toLowerCase())) project.tagPresets.push(v);
+    const name = allTags().find(t => t.toLowerCase() === v.toLowerCase());
+    const d = findDish(id); if(d && !d.tags.includes(name)) d.tags.push(name);
+  });
+}
+editorEl.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && e.target.matches('[data-newtag]')){ e.preventDefault(); addTagFrom(e.target); }
+});
+
+editorEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if(!b) return;
+  const act = b.dataset.act, card = b.closest('.dish-card'), id = card && card.dataset.id;
+  const p = cur();
+  switch(act){
+    case 'page-up': case 'page-down': {
+      const dlt = act === 'page-up' ? -1 : 1;
+      mutate(() => { const m = project.pages.splice(sel, 1)[0]; project.pages.splice(sel + dlt, 0, m); sel += dlt; });
+      break;
+    }
+    case 'page-dup':
+      mutate(() => {
+        const c = JSON.parse(JSON.stringify(p)); c.id = uid(); c.dishes.forEach(d => d.id = uid());
+        project.pages.splice(sel + 1, 0, c); sel++;
+      });
+      toast('Pagina duplicata');
+      break;
+    case 'page-del': {
+      const title = p.title;
+      mutate(() => { project.pages.splice(sel, 1); sel = Math.min(sel, project.pages.length - 1); });
+      toast('Pagina «' + (title || 'senza titolo') + '» eliminata', {label:'Annulla', fn:undo});
+      break;
+    }
+    case 'add-dish': {
+      const d = newDish();
+      mutate(() => { p.dishes.push(d); });
+      const el = editorEl.querySelector('[data-id="' + d.id + '"] .dname');
+      if(el){ el.focus(); el.scrollIntoView({block:'center'}); }
+      break;
+    }
+    case 'dish-up': case 'dish-down': {
+      const i = dishIdx(id), j = i + (act === 'dish-up' ? -1 : 1);
+      if(j < 0 || j >= p.dishes.length) break;
+      mutate(() => { const m = p.dishes.splice(i, 1)[0]; p.dishes.splice(j, 0, m); });
+      break;
+    }
+    case 'dish-dup': {
+      const i = dishIdx(id);
+      mutate(() => { const c = JSON.parse(JSON.stringify(p.dishes[i])); c.id = uid(); p.dishes.splice(i + 1, 0, c); });
+      break;
+    }
+    case 'dish-del': {
+      const i = dishIdx(id);
+      mutate(() => { p.dishes.splice(i, 1); });
+      toast('Piatto eliminato', {label:'Annulla', fn:undo});
+      break;
+    }
+    case 'tag': {
+      const d = findDish(id), t = b.dataset.tag;
+      if(!d) break;
+      const k = d.tags.indexOf(t);
+      if(k >= 0) d.tags.splice(k, 1); else d.tags.push(t);
+      b.setAttribute('aria-pressed', String(k < 0));
+      touch();
+      break;
+    }
+    case 'addtag': addTagFrom(b.parentElement.querySelector('input')); break;
+    case 'img-pick': $('#imgfile').click(); break;
+    case 'img-del': mutate(() => { p.image = null; }); break;
+  }
+});
+
+editorEl.addEventListener('change', async e => {
+  if(e.target.id !== 'imgfile') return;
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  try{
+    const url = await loadImage(f);
+    mutate(() => { cur().image = url; });
+  }catch(err){ toast('Impossibile leggere l\'immagine.'); }
+});
+
+async function loadImage(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const s = Math.min(1, 1800 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    x.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.86);
+  } finally { URL.revokeObjectURL(url); }
+}
+
+/* ---------- file: nuovo, apri, salva ---------- */
+const FILE_TYPES = [{description:'Progetto menu', accept:{'application/json':['.json']}}];
+const slug = () => (project.name || 'menu').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'menu';
+
+async function save(forceAs){
+  flush();
+  const data = JSON.stringify(project, null, 2);
+  if(window.showSaveFilePicker){
+    try{
+      if(!fileHandle || forceAs){
+        fileHandle = await window.showSaveFilePicker({suggestedName:slug() + '.json', types:FILE_TYPES});
+      }
+      const w = await fileHandle.createWritable(); await w.write(data); await w.close();
+      markSaved(); toast('Salvato in ' + fileHandle.name);
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+      fileHandle = null; /* se il permesso manca, si passa al download */
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], {type:'application/json'}));
+  a.download = slug() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  markSaved(); toast('File scaricato (cartella Download). Per continuare a lavorarci usa «Apri».');
+}
+function markSaved(){ savedSnap = snap(); dirty = false; savedOnce = true; updateStatus(); }
+
+async function openProject(){
+  if(dirty && !(await confirmDlg('Ci sono modifiche non salvate. Aprire un altro progetto comunque?', 'Apri comunque'))) return;
+  if(window.showOpenFilePicker){
+    try{
+      const h = (await window.showOpenFilePicker({types:FILE_TYPES}))[0];
+      const f = await h.getFile();
+      loadProject(JSON.parse(await f.text()), h);
+      toast('Aperto ' + f.name);
+    }catch(err){ if(!err || err.name !== 'AbortError') toast('Impossibile aprire il file: ' + (err && err.message)); }
+  } else openInput.click();
+}
+openInput.addEventListener('change', async () => {
+  const f = openInput.files[0]; openInput.value = ''; if(!f) return;
+  try{ loadProject(JSON.parse(await f.text()), null); toast('Aperto ' + f.name); }
+  catch(err){ toast('Impossibile aprire il file: ' + err.message); }
+});
+
+async function newProject(){
+  if(dirty && !(await confirmDlg('Ci sono modifiche non salvate. Creare un nuovo progetto comunque?', 'Nuovo progetto'))) return;
+  loadProject(blankProject(), null);
+  pnameEl.focus(); pnameEl.select();
+}
+
+/* ---------- PDF ---------- */
+function exportPdf(){
+  flush();
+  printEl.innerHTML = project.pages.map((p, i) => pageHTML(p, i)).join('');
+  const old = document.title; document.title = project.name || 'Menu';
+  toast('Nella finestra di stampa scegli «Salva come PDF» come destinazione.');
+  setTimeout(() => { window.print(); document.title = old; }, 250);
+}
+
+/* ---------- barra e scorciatoie ---------- */
+$('#bUndo').onclick = undo; $('#bRedo').onclick = redo;
+$('#bNew').onclick = newProject; $('#bOpen').onclick = openProject;
+$('#bSave').onclick = () => save(false); $('#bSaveAs').onclick = () => save(true);
+$('#bPdf').onclick = exportPdf;
+pnameEl.addEventListener('input', () => { project.name = pnameEl.value; scheduleCommit(); });
+
+document.addEventListener('keydown', e => {
+  const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  if(mod && k === 's'){ e.preventDefault(); save(false); }
+  else if(mod && k === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
+});
+window.addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- avvio con un menu di esempio ---------- */
+loadProject(sampleProject(), null);
+})();
+</script>
 </body>
 </html>
